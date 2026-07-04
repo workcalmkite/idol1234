@@ -1,49 +1,40 @@
 import streamlit as st
 import pandas as pd
-import os
 
-st.set_page_config(page_title="아이돌 검색 앱", page_icon="🎤", layout="wide")
+st.set_page_config(page_title="K-POP 아이돌 검색", page_icon="🎤", layout="wide")
 
-st.title("🎤 아이돌 데이터 검색 앱")
-st.write("여자/남자 아이돌을 검색하고, 소속사를 입력하면 그룹을 볼 수 있어요.")
+st.title("🎤 K-POP 아이돌 검색 앱")
 
-files = os.listdir()
-data_files = [f for f in files if f.endswith((".csv", ".xlsx"))]
+file_name = "Kpop_idol.csv"
 
-if not data_files:
-    st.error("csv 또는 xlsx 데이터 파일을 GitHub에 같이 올려주세요.")
-    st.stop()
-
-file_name = data_files[0]
-
-if file_name.endswith(".csv"):
+try:
+    df = pd.read_csv(file_name, encoding="utf-8-sig")
+except:
     try:
-        df = pd.read_csv(file_name, encoding="utf-8")
-    except UnicodeDecodeError:
         df = pd.read_csv(file_name, encoding="cp949")
-else:
-    df = pd.read_excel(file_name)
+    except:
+        df = pd.read_csv(file_name, encoding="latin1")
 
-st.success(f"데이터 불러오기 성공: {file_name}")
+st.success("데이터 불러오기 성공!")
 
-st.subheader("📌 전체 데이터")
+st.subheader("📌 전체 아이돌 데이터")
 st.dataframe(df, use_container_width=True)
 
 st.divider()
 
-st.subheader("👧👦 여자 / 남자 아이돌 검색")
+st.subheader("👧👦 성별로 검색하기")
 
-gender = st.selectbox("성별을 선택하세요", ["전체", "여자", "남자"])
+gender = st.selectbox("성별 선택", ["전체", "여자", "남자"])
 
-if gender != "전체":
+if gender == "전체":
+    gender_df = df
+else:
     gender_df = df[
         df.astype(str).apply(
             lambda row: row.str.contains(gender, case=False, na=False).any(),
             axis=1
         )
     ]
-else:
-    gender_df = df
 
 st.dataframe(gender_df, use_container_width=True)
 
@@ -51,23 +42,22 @@ st.divider()
 
 st.subheader("🔍 아이돌 이름 검색")
 
-idol_name = st.text_input("아이돌 이름을 입력하세요")
+name = st.text_input("아이돌 이름을 입력하세요")
 
-if idol_name:
+if name:
     result = df[
         df.astype(str).apply(
-            lambda row: row.str.contains(idol_name, case=False, na=False).any(),
+            lambda row: row.str.contains(name, case=False, na=False).any(),
             axis=1
         )
     ]
-    st.write(f"검색 결과: {len(result)}개")
     st.dataframe(result, use_container_width=True)
 
 st.divider()
 
 st.subheader("🏢 소속사로 그룹 찾기")
 
-agency = st.text_input("소속사를 입력하세요 예: SM, JYP, YG, HYBE")
+agency = st.text_input("소속사를 입력하세요")
 
 if agency:
     agency_result = df[
@@ -77,15 +67,5 @@ if agency:
         )
     ]
 
-    if len(agency_result) > 0:
-        st.write(f"'{agency}' 검색 결과: {len(agency_result)}개")
-        st.dataframe(agency_result, use_container_width=True)
-    else:
-        st.warning("해당 소속사의 그룹을 찾을 수 없어요.")
-
-st.divider()
-
-st.subheader("📊 데이터 요약")
-st.write(f"전체 데이터 개수: {len(df)}개")
-st.write(f"컬럼 개수: {len(df.columns)}개")
-st.write("컬럼 이름:", list(df.columns))
+    st.write(f"검색 결과: {len(agency_result)}개")
+    st.dataframe(agency_result, use_container_width=True)
